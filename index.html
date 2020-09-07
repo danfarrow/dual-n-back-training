@@ -8,10 +8,7 @@
 	<link rel="stylesheet" href="css/style.css">
 
 	<!-- JavaScript -->
-	<script type="text/javascript" src="js/dual-n-back.js"></script>
-	<script type="text/javascript" src="js/keyboard.0.0.1.js"></script>
-	<script type="text/javascript" src="js/keymap.0.0.1.js"></script>
-	<script type="text/javascript" src="js/utility.js"></script>
+	<script type="text/javascript" src="js/dist/main.js"></script>
 
 	<!-- Inline JavaScript -->
 	<script type="text/javascript">
@@ -22,7 +19,7 @@
 		document.addEventListener(
 			"DOMContentLoaded",
 			function() {
-				NBACK.init( $( "container") );
+				NBACK.init( document.getElementById( "container") );
 				KEYBOARD.init( keymap );
 			}
 		);

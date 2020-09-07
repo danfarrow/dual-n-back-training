@@ -1,0 +1,18 @@
+{
+  "name": "dual-n-back",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/dual-n-back",
+  "devDependencies": {
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  },
+  "scripts": {
+    "webpack:build": "webpack --progress --mode=production",
+    "webpack:watch": "webpack --progress --watch",
+    "webpack;server": "webpack-dev-server --open"
+  },
+  "author": "dan@farrow.email",
+  "license": "",
+  "dependencies": {}
+}

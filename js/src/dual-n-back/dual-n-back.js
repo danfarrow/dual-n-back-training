@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @todo Re-structure app:
  *
@@ -29,7 +30,7 @@
  * @todo Abstract question dimensions into class
  * @todo Blank grid buffer between questions
  */
-NBACK = (function() {
+global.NBACK = (function() {
  	var api = {};
 
    let cellsModel = [],// Model representing question cells
@@ -42,13 +43,16 @@ NBACK = (function() {
       potentialScore = 0,
       questionAnsweredColour = false,
       questionAnsweredPosition = false,
+      questionAnsweredCorrectlyColour = false,
+      questionAnsweredCorrectlyPosition = false,
       questionBuffer = 500, // Milliseconds
       questionDuration = 1500, // Milliseconds
       questions = [],// Array of questions in current/last round
       round = 0,
       roundsPerGame = 10,
       score = 0,
-      subtitle;
+      subtitle,
+      surtitle;
 
  	// API: Set everything up
  	api.init = function( elem ){
@@ -277,18 +281,18 @@ NBACK = (function() {
    }
 
  	// Add score
- 	scoreAdd = function(){
+ 	const scoreAdd = function(){
       console.log( "++score" );
       return ++score;
    }
 
- 	// API: Get score
- 	scoreGet = function(){
+ 	// Get score
+ 	const scoreGet = function(){
       return score;
    }
 
    // Subtract score
-   scoreSubtract = function(){
+   const scoreSubtract = function(){
       console.log( "--score" );
       return --score;
    }
@@ -297,3 +301,7 @@ NBACK = (function() {
 	return api;
 
 })();
+
+require( './keyboard.0.0.1.js' );
+require( './keymap.0.0.1.js' );
+require( './utility.js' );
