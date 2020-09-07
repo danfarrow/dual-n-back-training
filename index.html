@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Dual N Back trainer</title>
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="css/style.css">
+
+	<!-- JavaScript -->
+	<script type="text/javascript" src="js/dual-n-back.js"></script>
+	<script type="text/javascript" src="js/keyboard.0.0.1.js"></script>
+	<script type="text/javascript" src="js/keymap.0.0.1.js"></script>
+	<script type="text/javascript" src="js/utility.js"></script>
+
+	<!-- Inline JavaScript -->
+	<script type="text/javascript">
+
+		/**
+		 * Set everything up when ready
+		 */
+		document.addEventListener(
+			"DOMContentLoaded",
+			function() {
+				NBACK.init( $( "container") );
+				KEYBOARD.init( keymap );
+			}
+		);
+
+	</script>
+
+</head>
+
+<body>
+	<h1>Dual N Back trainer</h1>
+	<div id="container"></div>
+</body>
+</html>
