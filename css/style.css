@@ -1,7 +1,10 @@
 body {
+   /*align-items: flex-end;*/
+   background-color: #333;
+   color: #eee;
    font-family: monospace;
-   text-align: center;
    margin: 4em;
+   text-align: center;
 }
 
 h1, h2, h3 {
@@ -11,13 +14,17 @@ h1, h2, h3 {
 .cells {
    display: grid;
    grid-template-columns: 1fr 1fr 1fr;
+   margin: 0 auto;
+   max-width: 600px;
 }
 
 .cells > div {
    height: 200px;
+   box-shadow: inset 0 0 10px #0003;
+   transition: background-color 0.1s;
 }
 
 .cells,
 .cells > div {
-   border: 6px solid #ddd;
+   border: 6px solid #ccc;
 }

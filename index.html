@@ -18,11 +18,10 @@
 		 */
 		document.addEventListener(
 			"DOMContentLoaded",
-			function() {
-				NBACK.init( document.getElementById( "container") );
-				KEYBOARD.init( keymap );
-			}
-		);
+			() => NBACK.init(
+            document.getElementById( "container")
+         )
+      );
 
 	</script>
 

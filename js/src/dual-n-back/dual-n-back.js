@@ -1,307 +1,189 @@
 "use strict";
+
+import Question from "./Question.js";
+import View from "./View.js";
+
 /**
- * @todo Re-structure app:
+ * * Start game
+ * * While remainingQuestions > 0:
+ *    * Game creates new Question
+ *       * Question object receives array of dimensions
+ *       * Question object creates array of dimension instances
+ *    * Game queries Question against n-back-th Question to create Answer object
+ *       * Answer contains array of matching dimensions
+ *    * Game displays Question to user
+ *    * User responds or not to create Response object
+ *    * Game queries Response against Answer to get score nBackOffset
+ *       * User scores +1 for each correctly matched dimension
+ *       * User scores -1 for each incorrectly matched dimension
+ *       * User scores -1 for each missed dimension
+ *    * Game updates score accordingly and creates next Question
+ * * End game
  *
- * Game flow:
- * - A game consists of a number of rounds (roundsPerGame)
- * - A round has one question
- * - Each question has a number of dimensions (dimensionsArray)
- * - The question is displayed for a fixed amount of time (questionDuration)
- * - An answer consists of an array of matching dimensions
- * - The player submits an answer one dimension at a time
- * - At the end of the questionDuration each dimension of the question is appraised
- * - Players gain points for correctly identifying each matching dimension
- * - Players lose points for incorrectly identifying a dimension match
- * - Players lose points for failing to identify a dimmension match
- * - At the end of the game the players score is displayed as a percentage of potentially available score
- *
- * Objects
- *    Game object
- *       GUI
- *       Questions
- *       Score
- *    Question object
- *       Dimension 1
- *       Dimension 2
- *    Answer object
- *       Dimension 1
- *       Dimension 2
- *
- * @todo Abstract question dimensions into class
  * @todo Blank grid buffer between questions
  */
 global.NBACK = (function() {
- 	var api = {};
-
-   let cellsModel = [],// Model representing question cells
-      colours = [ 'red', 'blue', 'green' ],
-      dimensions = [ 'position', 'colour' ],// Not yet used
-      dimensionKeys = [ 101, 113 ], // e, q -- Not yet used
-      gameStarted = false,
-      lastCell,
-      offset = -2,
-      potentialScore = 0,
-      questionAnsweredColour = false,
-      questionAnsweredPosition = false,
-      questionAnsweredCorrectlyColour = false,
-      questionAnsweredCorrectlyPosition = false,
-      questionBuffer = 500, // Milliseconds
-      questionDuration = 1500, // Milliseconds
-      questions = [],// Array of questions in current/last round
-      round = 0,
-      roundsPerGame = 10,
-      score = 0,
-      subtitle,
-      surtitle;
-
- 	// API: Set everything up
- 	api.init = function( elem ){
-      gameInit( elem );
-  	}
-
-   // API: Key was pressed
-   api.onKeyPress = function( s ){
-      switch( s ){
-         case 'colour':
-            // Check game in progress & colour not answered
-            if ( !gameStarted || questionAnsweredColour ){
-               return;
-            }
-
-            questionAnsweredColour = true;
-            console.log( 'Colour key pressed' );
-
-            // Check answer is correct
-            answerCheck( 'colour' );
-            break;
-         case 'position':
-            // Check game in progress & position not already answered for this round
-            if ( !gameStarted || questionAnsweredPosition ){
-               return;
-            }
-
-            questionAnsweredPosition = true;
-
-            console.log('Position key pressed');
-            answerCheck( 'position' );
-
-            break;
-         case 'start':
-            if ( gameStarted ){ return; }
-            console.log('start key pressed');
-            gameStart();
-            break;
-      }
-   }
-
-   ///////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-   ///////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-   ///////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
-   /**
-    * Check the submitted answer & adjust score accordingly
-    */
-   const answerCheck = function( dimension ){
-      let currentQuestionIndex = questions.length,
-         currentQuestion = questionRetrieve( currentQuestionIndex ),
-         nbackthQuestion = questionRetrieve( currentQuestionIndex + offset ),
-         dimensionMatches = dimensionMatch( currentQuestion, nbackthQuestion, dimension );
-
-      if ( dimensionMatches ){
-         switch( dimension ){
-            case 'colour':
-               questionAnsweredCorrectlyColour = true;
-               break;
-            case 'position':
-               questionAnsweredCorrectlyPosition = true;
-               break;
+   let api = {},
+      dimensions = {
+         colour: {
+            triggerKey: "Q",
+            triggerKeyCode: 81,
+            values: [ '#ed553b', '#20639b', '#f6d55c' ]
+         },
+         position: {
+            triggerKey: "E",
+            triggerKeyCode: 69,
+            values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
          }
-         scoreAdd();
-      } else {
-         scoreSubtract();
-      }
+      },
+      currentQuestion,
+      gameState = "ready",// "ready", "question", "buffer", "over"
+      nBackOffset = -2,
+      potentialScore = 0,
+      questionBuffer = 200, // Milliseconds
+      questionDuration = 1800, // Milliseconds
+      questions = [],// Array of questions in current/last round
+      response = [],// Holds user response while question is active
+      round = 0,
+      roundsPerGame = 20,
+      score = 0,
+      view;
+
+   // API: Set everything up
+   api.init = function( elem ){
+      // Create view
+      view = new View( elem, dimensions, nBackOffset );
+
+      // Populate captions
+      const rules = [];
+
+      for( const d in dimensions )
+         rules.push( `<strong>${ dimensions[d].triggerKey }</strong>: ${d}` );
+
+      view.showSurtitle( `${ rules.join(", ") }, N-back: <strong>${nBackOffset}</strong>` );
+      view.showSubtitle( 'Press SPACE to start' );
+
+      // Listen for keypresses
+      document.addEventListener( "keydown", (e) => onKeyPress(e) );
    }
 
    /**
-    * Confirm dimension match between two questions
+    * Keypress event handler
     */
-   const dimensionMatch = function( q1, q2, dimension ){
-      // Get n-backth question
-      let currentQuestionIndex = questions.length - 1,
-         currentQuestion = questions[ currentQuestionIndex ],
-         nbackth = questions[ currentQuestionIndex + offset ];
+   const onKeyPress = function( e ){
 
-      if ( !nbackth ){ return false; }
+      // Start game if space pressed
+      if( 32 === e.keyCode && "ready" === gameState ) questionEnd();
 
-      if (
-         undefined === q1
-         || undefined === q2
-         || undefined === q1[ dimension ]
-         || undefined === q2[ dimension ]
-      ){
-         return false;
-      }
+      // Check if currently accepting user responses
+      if( gameState !== "question" ) return;
 
-      return q1[ dimension ] === q2[ dimension ];
-   }
-
-   const display = function( txt ){
-      subtitle.innerHTML = txt;
-   }
-
-   /**
-    * Create GUI
-    */
-   const gameInit = function(elem){
-      guiCreate( elem );
-      display( 'Press SPACE to start' );
-   }
-
-   /**
-    * Start game
-    */
-   const gameStart = function(){
-      gameStarted = true;
-      setTimeout( roundNext, questionDuration );
+      // Check for valid user response
+      for( const d in dimensions )
+         if( e.keyCode === dimensions[ d ].triggerKeyCode )
+            onUserResponse( d );
    }
 
    /**
     * End game
     */
    const gameEnd = function(){
-      onGameEnd();
+      clearCurrentQuestion();
+      gameState = "over";
+      view.showSubtitle(
+         `Game over! Score <strong>${ score }</strong>
+         / <strong>${ potentialScore }</strong>`
+      );
    }
 
    /**
-    * Create the GUI grid, surtitle & subtitle markup
+    * User has responded with dimension d - update response
     */
-   const guiCreate = function( gui ){
+   const onUserResponse = function( d ){
+      if( response.indexOf( d ) !== -1 ) return;
 
-      // Create grid
-      let cell,
-         cells = document.createElement( 'div' );
-
-      cells.classList.add( 'cells' );
-
-      for( let r = 0; r < 3; r++ ){
-         for( let c = 0; c < 3; c++ ){
-            cell = document.createElement( 'div' );
-            cells.appendChild( cell );
-            cellsModel.push( { 'gui':cell } );
-         }
-      }
-
-      // Create captions
-      surtitle = document.createElement( 'h2' );
-      surtitle.innerHTML = `<strong>Q</strong> COLOUR
-         <strong>E</strong> POSITION
-         N-Back <strong>${offset}</strong>`;
-
-      subtitle = document.createElement( 'h2' );
-      gui.appendChild( surtitle );
-      gui.appendChild( cells );
-      gui.appendChild( subtitle );
-   }
-
-   /**
-    * Event callback for creating a new question
-    */
-   const onQuestionCreate = function(){
-      display( `Round <strong>${round}<strong> of <strong>${roundsPerGame}</strong>` );
-   }
-
-   /**
-    * Event callback for game ending
-    */
-   const onGameEnd = function(){
-      display( `Game over - score <strong>${scoreGet()}</strong>` );
+      // Response is not already registered so add to responses
+      response.push( d );
    }
 
    /**
     * Create a new question
     */
    const questionCreate = function(){
-      // @todo Brief delay between questionDestroy and question
-      // @todo Check if previous question could have earned points & track potential points
-
-      // Choose a random cell
-      let position = Math.floor( Math.random() * cellsModel.length ),
-         cellGui = cellsModel[ position ].gui;
-
-      // Choose a random colour
-      // @todo Make sure colour changes if cell is same as previous
-      let colour = colours[ Math.floor( Math.random() * colours.length ) ];
-      console.log( position, colour );
-
-      questions.push( {'position': position, 'colour':colour, 'gui': cellGui } );
-
-      // Update gui
-      if( lastCell ){ lastCell.removeAttribute( 'style' ); }
-      lastCell = cellGui;
-      cellGui.setAttribute( 'style', `background-color: ${colour};` );
-
-      // Update flags
-      questionAnsweredColour = false;
-      questionAnsweredPosition = false;
-      questionAnsweredCorrectlyColour = false;
-      questionAnsweredCorrectlyPosition = false;
-
-      onQuestionCreate();
-   }
-
-   const questionDestroy = function(){
-      // @todo Check if previous question had possible points
-      if ( answerCheck('colour') && !questionAnsweredCorrectlyColour ){
-         scoreSubtract();
-      }
-
-      if ( answerCheck('position') && !questionAnsweredCorrectlyPosition ){
-         scoreSubtract();
-      }
-
+      const q = new Question( dimensions );
+      questions.push( q );
+      currentQuestion = q;
+      gameState = "question";
+      view.showSubtitle( `${round} / ${roundsPerGame}` );
+      view.showQuestion( q );
    }
 
    /**
-    * Retrieve the n-backth question
+    * Clear the grid
     */
-   const questionRetrieve = function( currentQuestionIndex ){
-      return questions[ currentQuestionIndex ];
+   const clearCurrentQuestion = function(){
+      view.showSubtitle( "" );
+      if( !currentQuestion ) return;
+      view.removeQuestion( currentQuestion );
+      currentQuestion = null;
    }
 
-   const roundNext = function(){
+   /**
+    * End the current question, set timeout for next
+    */
+   const questionEnd = function(){
+      // Compare current question with nth-back
+      // to get dimension intersection
+      const currentIndex = questions.length - 1,
+         nBackIndex = currentIndex + nBackOffset;
+
+      let dimensionMatches = [];
+
+      if( nBackIndex >= 0 ){
+         const nBackthQuestion = questions[ nBackIndex ];
+         dimensionMatches = currentQuestion.compare( nBackthQuestion );
+      }
+
+      // Add to potential score
+      potentialScore += dimensionMatches.length;
+
+      // Query user response against current
+      // question to get actual score
+      for( const d in dimensions ){
+         if( dimensionMatches.includes( d ) && response.includes( d ) ){
+            score++;
+         } else if( dimensionMatches.includes( d ) || response.includes( d) ){
+            score--;
+         }
+      }
+
+      clearCurrentQuestion();// Clear grid
+      response = [];// Clear user response
+
+      // Set state
+      gameState = "buffer";
+
+
+      setTimeout( nextQuestion, questionBuffer );
+   }
+
+   /**
+    * Create the next question
+    */
+   const nextQuestion = function(){
       ++round;
-      questionDestroy();
       questionCreate();
 
+      // Set timer either for buffer between
+      // questions or end of the game
       if ( round < roundsPerGame ){
-         setTimeout( roundNext, questionDuration );
+         setTimeout( questionEnd, questionDuration );
       } else {
          setTimeout( gameEnd, questionDuration );
       }
    }
 
- 	// Add score
- 	const scoreAdd = function(){
-      console.log( "++score" );
-      return ++score;
-   }
-
- 	// Get score
- 	const scoreGet = function(){
-      return score;
-   }
-
-   // Subtract score
-   const scoreSubtract = function(){
-      console.log( "--score" );
-      return --score;
-   }
-
- 	// Done
-	return api;
+   // Done
+   return api;
 
 })();
-
-require( './keyboard.0.0.1.js' );
-require( './keymap.0.0.1.js' );
-require( './utility.js' );
