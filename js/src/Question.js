@@ -3,12 +3,15 @@
 export default class {
    constructor( dimensions ){
 
+      this.dimensions = {};
+
       // Create new values for each dimension
       for( const dimensionName in dimensions ){
          const dimension = dimensions[ dimensionName ],
-            values = dimension.values;
+            values = dimension.values,
+            randomItem = Math.floor( Math.random() * values.length );
 
-         this[ dimensionName ] = values[ Math.floor( Math.random() * values.length ) ];
+         this.dimensions[ dimensionName ] = values[ randomItem ];
       }
    }
 
@@ -20,7 +23,7 @@ export default class {
    compare( q ){
       if ( !q ) return [];
       const matches = [];
-      for( let d in q ) if( q[d] === this[d] ) matches.push( d );
+      for( let d in q.dimensions ) if( q.dimensions[d] === this.dimensions[d] ) matches.push( d );
       return matches;
    }
 }

@@ -32,15 +32,15 @@ export default class {
    }
 
    showQuestion( q ){
-      const position = q.position,
-         colour = q.colour,
+      const position = q.dimensions.position,
+         colour = q.dimensions.colour,
          cell = this.cells[ position ];
 
       cell.setAttribute( 'style', `background-color: ${colour};` );
    }
 
    removeQuestion( q ){
-      const position = q.position,
+      const position = q.dimensions.position,
          cell = this.cells[ position ];
 
       cell.removeAttribute( 'style' );

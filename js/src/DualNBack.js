@@ -171,6 +171,7 @@ export default class {
       if( nBackIndex >= 0 ){
          const nBackthQuestion = this.questions[ nBackIndex ];
          dimensionMatches = this.currentQuestion.compare( nBackthQuestion );
+         console.log( dimensionMatches );
       }
 
       // Add to potential score
@@ -181,7 +182,7 @@ export default class {
       for( const d in this.config.dimensions ){
          if( dimensionMatches.includes( d ) && this.response.includes( d ) ){
             this.score++;
-         } else if( dimensionMatches.includes( d ) || this.response.includes( d) ){
+         } else if( dimensionMatches.includes( d ) || this.response.includes( d ) ){
             this.score--;
          }
       }
@@ -190,9 +191,17 @@ export default class {
       this.response = [];// Clear user response
       this.gameState = "buffer";// Set state
 
-      this.timeoutId = setTimeout(
-         () => this.nextQuestion(), this.config.questionBuffer
-      );
+      // Set timeout for buffer between questions
+      // or end of game
+      if ( this.round < this.config.roundsPerGame ){
+         this.timeoutId = setTimeout(
+            () => this.nextQuestion(),
+            this.config.questionBuffer
+         );
+      } else {
+         this.gameEnd();
+      }
+
    }
 
    /**
@@ -202,16 +211,10 @@ export default class {
       ++this.round;
       this.questionCreate();
 
-      // Set timer either for buffer between
-      // questions or end of the game
-      if ( this.round < this.config.roundsPerGame ){
-         this.timeoutId = setTimeout(
-            () => this.questionEnd(), this.config.questionDuration
-         );
-      } else {
-         this.timeoutId = setTimeout(
-            () => this.gameEnd(), this.config.questionDuration
-         );
-      }
+      // Set timeout for question duration
+      this.timeoutId = setTimeout(
+         () => this.questionEnd(),
+         this.config.questionDuration
+      );
    }
 }
