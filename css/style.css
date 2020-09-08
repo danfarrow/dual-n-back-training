@@ -26,5 +26,5 @@ h1, h2, h3 {
 
 .cells,
 .cells > div {
-   border: 6px solid #ccc;
+   border: 6px solid #111;
 }
