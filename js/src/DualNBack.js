@@ -31,7 +31,7 @@ import View from "./View.js";
  * - Add config options with local storage
  */
 
-class DualNBack {
+export default class {
 
    constructor( elem ){
 

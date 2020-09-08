@@ -1,6 +1,6 @@
 module.exports = {
   mode: 'development',
-  entry:   './src/dual-n-back',
+  entry:   './src/app.js',
   output: {
     filename: 'main.js',
     publicPath: './dist'

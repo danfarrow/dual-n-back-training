@@ -2,7 +2,7 @@
   "name": "dual-n-back",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/dual-n-back",
+  "main": "./src/app.js",
   "devDependencies": {
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
