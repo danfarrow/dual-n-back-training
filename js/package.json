@@ -12,7 +12,7 @@
     "webpack:watch": "webpack --progress --watch",
     "webpack;server": "webpack-dev-server --open"
   },
-  "author": "dan@farrow.email",
+  "author": "Dan Farrow",
   "license": "",
   "dependencies": {}
 }
