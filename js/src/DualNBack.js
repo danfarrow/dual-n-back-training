@@ -26,18 +26,16 @@ import View from "./View.js";
  *
  * Roadmap
  * -------
- * - Add restart option at end of game
- * - ESC key to quit current game
- * - Add config options with local storage
+ * - Check scoring accuracy - might be one off
+ * - Add user config frontend with local storage
  */
 
 export default class {
 
-   constructor( elem ){
-
+   constructor( elem, userConfig = {} ){
 
       // Config
-      this.config = {
+      const defaultConfig = {
          dimensions: {
             colour: {
                triggerKey: "Q",
@@ -54,30 +52,42 @@ export default class {
          questionBuffer: 200, // Milliseconds
          questionDuration: 1800, // Milliseconds
          roundsPerGame: 20
-      }
+      };
 
-      // Init
+      // Merge configs
+      this.config = Object.assign( {}, defaultConfig, userConfig );
+
+      // Create view & instructions
+      this.view = new View( elem );
+      const rules = [];
+
+      for( const d in this.config.dimensions )
+         rules.push( `<strong>${ this.config.dimensions[d].triggerKey }</strong>: ${d}` );
+
+      this.view.showSurtitle(
+         `${ rules.join(", ") },
+         N-back: <strong>
+         ${this.config.nBackOffset}
+         </strong>`
+      );
+      this.view.showSubtitle( 'Press SPACE to start' );
+
+      // Listen for keypresses & init
+      document.addEventListener( "keydown", (e) => this.onKeyPress(e) );
+      this.resetGame();
+   }
+
+   /**
+    * Reset
+    */
+   resetGame(){
+      this.timeoutId = null;
       this.questions = [];// Array of questions in current/last round
       this.response = [];// Holds user response while question is active
       this.gameState = "ready";// "ready", "question", "buffer", "over"
       this.potentialScore = 0;
       this.round = 0;
       this.score = 0;
-
-      // Create view
-      this.view = new View( elem );
-
-      // Populate captions
-      const rules = [];
-
-      for( const d in this.config.dimensions )
-         rules.push( `<strong>${ this.config.dimensions[d].triggerKey }</strong>: ${d}` );
-
-      this.view.showSurtitle( `${ rules.join(", ") }, N-back: <strong>${this.config.nBackOffset}</strong>` );
-      this.view.showSubtitle( 'Press SPACE to start' );
-
-      // Listen for keypresses
-      document.addEventListener( "keydown", (e) => this.onKeyPress(e) );
    }
 
    /**
@@ -87,6 +97,9 @@ export default class {
 
       // Start game if space pressed
       if( 32 === e.keyCode && "ready" === this.gameState ) this.questionEnd();
+
+      // Abort game if ESC pressed
+      if( 27 === e.keyCode && "ready" !== this.gameState) this.gameEnd();
 
       // Check if currently accepting user responses
       if( this.gameState !== "question" ) return;
@@ -101,12 +114,15 @@ export default class {
     * End game
     */
    gameEnd(){
+      clearInterval( this.timeoutId );
       this.clearCurrentQuestion();
       this.gameState = "over";
       this.view.showSubtitle(
          `Game over! Score <strong>${ this.score }</strong>
-         / <strong>${ this.potentialScore }</strong>`
+         / <strong>${ this.potentialScore }</strong>
+         <br />Press SPACE to restart`
       );
+      this.resetGame();
    }
 
    /**
@@ -174,7 +190,9 @@ export default class {
       this.response = [];// Clear user response
       this.gameState = "buffer";// Set state
 
-      setTimeout( () => this.nextQuestion(), this.config.questionBuffer );
+      this.timeoutId = setTimeout(
+         () => this.nextQuestion(), this.config.questionBuffer
+      );
    }
 
    /**
@@ -187,9 +205,13 @@ export default class {
       // Set timer either for buffer between
       // questions or end of the game
       if ( this.round < this.config.roundsPerGame ){
-         setTimeout( () => this.questionEnd(), this.config.questionDuration );
+         this.timeoutId = setTimeout(
+            () => this.questionEnd(), this.config.questionDuration
+         );
       } else {
-         setTimeout( () => this.gameEnd(), this.config.questionDuration );
+         this.timeoutId = setTimeout(
+            () => this.gameEnd(), this.config.questionDuration
+         );
       }
    }
 }
