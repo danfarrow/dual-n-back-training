@@ -3,9 +3,22 @@
 import Question from "./Question.js";
 import View from "./View.js";
 
+
 /**
+ * Set everything up when ready
+ */
+document.addEventListener(
+   "DOMContentLoaded",
+   () => new NBack( document.getElementById( "container") )
+);
+
+/**
+ * Dual N-Back training app
+ *
+ * Code walkthrough
+ * ----------------
  * * Start game
- * * While remainingQuestions > 0:
+ * * While questionCount < totalQuestions:
  *    * Game creates new Question
  *       * Question object receives array of dimensions
  *       * Question object creates array of dimension instances
@@ -20,170 +33,172 @@ import View from "./View.js";
  *    * Game updates score accordingly and creates next Question
  * * End game
  *
- * @todo Blank grid buffer between questions
+ * Roadmap
+ * -------
+ * - Add restart option at end of game
+ * - ESC key to quit current game
+ * - Add config options with local storage
  */
-global.NBACK = (function() {
-   let api = {},
-      dimensions = {
-         colour: {
-            triggerKey: "Q",
-            triggerKeyCode: 81,
-            values: [ '#ed553b', '#20639b', '#f6d55c' ]
-         },
-         position: {
-            triggerKey: "E",
-            triggerKeyCode: 69,
-            values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
-         }
-      },
-      currentQuestion,
-      gameState = "ready",// "ready", "question", "buffer", "over"
-      nBackOffset = -2,
-      potentialScore = 0,
-      questionBuffer = 200, // Milliseconds
-      questionDuration = 1800, // Milliseconds
-      questions = [],// Array of questions in current/last round
-      response = [],// Holds user response while question is active
-      round = 0,
-      roundsPerGame = 20,
-      score = 0,
-      view;
 
-   // API: Set everything up
-   api.init = function( elem ){
+class NBack {
+
+   constructor( elem ){
+
+
+      // Config
+      this.config = {
+         dimensions: {
+            colour: {
+               triggerKey: "Q",
+               triggerKeyCode: 81,
+               values: [ '#ed553b', '#20639b', '#f6d55c' ]
+            },
+            position: {
+               triggerKey: "E",
+               triggerKeyCode: 69,
+               values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
+            }
+         },
+         nBackOffset: -2,
+         questionBuffer: 200, // Milliseconds
+         questionDuration: 1800, // Milliseconds
+         roundsPerGame: 20
+      }
+
+      // Init
+      this.questions = [];// Array of questions in current/last round
+      this.response = [];// Holds user response while question is active
+      this.gameState = "ready";// "ready", "question", "buffer", "over"
+      this.potentialScore = 0;
+      this.round = 0;
+      this.score = 0;
+
       // Create view
-      view = new View( elem, dimensions, nBackOffset );
+      this.view = new View( elem );
 
       // Populate captions
       const rules = [];
 
-      for( const d in dimensions )
-         rules.push( `<strong>${ dimensions[d].triggerKey }</strong>: ${d}` );
+      for( const d in this.config.dimensions )
+         rules.push( `<strong>${ this.config.dimensions[d].triggerKey }</strong>: ${d}` );
 
-      view.showSurtitle( `${ rules.join(", ") }, N-back: <strong>${nBackOffset}</strong>` );
-      view.showSubtitle( 'Press SPACE to start' );
+      this.view.showSurtitle( `${ rules.join(", ") }, N-back: <strong>${this.config.nBackOffset}</strong>` );
+      this.view.showSubtitle( 'Press SPACE to start' );
 
       // Listen for keypresses
-      document.addEventListener( "keydown", (e) => onKeyPress(e) );
+      document.addEventListener( "keydown", (e) => this.onKeyPress(e) );
    }
 
    /**
     * Keypress event handler
     */
-   const onKeyPress = function( e ){
+   onKeyPress( e ){
 
       // Start game if space pressed
-      if( 32 === e.keyCode && "ready" === gameState ) questionEnd();
+      if( 32 === e.keyCode && "ready" === this.gameState ) this.questionEnd();
 
       // Check if currently accepting user responses
-      if( gameState !== "question" ) return;
+      if( this.gameState !== "question" ) return;
 
       // Check for valid user response
-      for( const d in dimensions )
-         if( e.keyCode === dimensions[ d ].triggerKeyCode )
-            onUserResponse( d );
+      for( const d in this.config.dimensions )
+         if( e.keyCode === this.config.dimensions[ d ].triggerKeyCode )
+            this.onUserResponse( d );
    }
 
    /**
     * End game
     */
-   const gameEnd = function(){
-      clearCurrentQuestion();
-      gameState = "over";
-      view.showSubtitle(
-         `Game over! Score <strong>${ score }</strong>
-         / <strong>${ potentialScore }</strong>`
+   gameEnd(){
+      this.clearCurrentQuestion();
+      this.gameState = "over";
+      this.view.showSubtitle(
+         `Game over! Score <strong>${ this.score }</strong>
+         / <strong>${ this.potentialScore }</strong>`
       );
    }
 
    /**
     * User has responded with dimension d - update response
     */
-   const onUserResponse = function( d ){
-      if( response.indexOf( d ) !== -1 ) return;
+   onUserResponse( d ){
+      if( this.response.indexOf( d ) !== -1 ) return;
 
       // Response is not already registered so add to responses
-      response.push( d );
+      this.response.push( d );
    }
 
    /**
     * Create a new question
     */
-   const questionCreate = function(){
-      const q = new Question( dimensions );
-      questions.push( q );
-      currentQuestion = q;
-      gameState = "question";
-      view.showSubtitle( `${round} / ${roundsPerGame}` );
-      view.showQuestion( q );
+   questionCreate(){
+      const q = new Question( this.config.dimensions );
+      this.questions.push( q );
+      this.currentQuestion = q;
+      this.gameState = "question";
+      this.view.showSubtitle( `${this.round} / ${this.config.roundsPerGame}` );
+      this.view.showQuestion( q );
    }
 
    /**
     * Clear the grid
     */
-   const clearCurrentQuestion = function(){
-      view.showSubtitle( "" );
-      if( !currentQuestion ) return;
-      view.removeQuestion( currentQuestion );
-      currentQuestion = null;
+   clearCurrentQuestion(){
+      this.view.showSubtitle( "" );
+      if( !this.currentQuestion ) return;
+      this.view.removeQuestion( this.currentQuestion );
+      this.currentQuestion = null;
    }
 
    /**
     * End the current question, set timeout for next
     */
-   const questionEnd = function(){
+   questionEnd(){
       // Compare current question with nth-back
       // to get dimension intersection
-      const currentIndex = questions.length - 1,
-         nBackIndex = currentIndex + nBackOffset;
+      const currentIndex = this.questions.length - 1,
+         nBackIndex = currentIndex + this.config.nBackOffset;
 
       let dimensionMatches = [];
 
       if( nBackIndex >= 0 ){
-         const nBackthQuestion = questions[ nBackIndex ];
-         dimensionMatches = currentQuestion.compare( nBackthQuestion );
+         const nBackthQuestion = this.questions[ nBackIndex ];
+         dimensionMatches = this.currentQuestion.compare( nBackthQuestion );
       }
 
       // Add to potential score
-      potentialScore += dimensionMatches.length;
+      this.potentialScore += dimensionMatches.length;
 
       // Query user response against current
       // question to get actual score
-      for( const d in dimensions ){
-         if( dimensionMatches.includes( d ) && response.includes( d ) ){
-            score++;
-         } else if( dimensionMatches.includes( d ) || response.includes( d) ){
-            score--;
+      for( const d in this.config.dimensions ){
+         if( dimensionMatches.includes( d ) && this.response.includes( d ) ){
+            this.score++;
+         } else if( dimensionMatches.includes( d ) || this.response.includes( d) ){
+            this.score--;
          }
       }
 
-      clearCurrentQuestion();// Clear grid
-      response = [];// Clear user response
+      this.clearCurrentQuestion();// Clear grid
+      this.response = [];// Clear user response
+      this.gameState = "buffer";// Set state
 
-      // Set state
-      gameState = "buffer";
-
-
-      setTimeout( nextQuestion, questionBuffer );
+      setTimeout( () => this.nextQuestion(), this.config.questionBuffer );
    }
 
    /**
     * Create the next question
     */
-   const nextQuestion = function(){
-      ++round;
-      questionCreate();
+   nextQuestion(){
+      ++this.round;
+      this.questionCreate();
 
       // Set timer either for buffer between
       // questions or end of the game
-      if ( round < roundsPerGame ){
-         setTimeout( questionEnd, questionDuration );
+      if ( this.round < this.config.roundsPerGame ){
+         setTimeout( () => this.questionEnd(), this.config.questionDuration );
       } else {
-         setTimeout( gameEnd, questionDuration );
+         setTimeout( () => this.gameEnd(), this.config.questionDuration );
       }
    }
-
-   // Done
-   return api;
-
-})();
+}
