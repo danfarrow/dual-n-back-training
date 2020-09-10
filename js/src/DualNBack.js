@@ -26,7 +26,7 @@ import View from "./View.js";
  *
  * Roadmap
  * -------
- * - Check scoring accuracy - might be one off
+ * - Show sparkline of progress
  * - Add user config frontend with local storage
  */
 
@@ -51,7 +51,9 @@ export default class {
          nBackOffset: -2,
          questionBuffer: 200, // Milliseconds
          questionDuration: 1800, // Milliseconds
-         roundsPerGame: 20
+         targetRounds: 20,
+         targetPotentialScore: 20,
+         endOnTargetPotentialScore: true // End game on targetPotentialScore | targetRounds
       };
 
       // Merge configs
@@ -102,7 +104,7 @@ export default class {
       if( 27 === e.keyCode && "ready" !== this.gameState) this.gameEnd();
 
       // Check if currently accepting user responses
-      if( this.gameState !== "question" ) return;
+      if( !this.currentQuestion ) return;
 
       // Check for valid user response
       for( const d in this.config.dimensions )
@@ -117,9 +119,15 @@ export default class {
       clearInterval( this.timeoutId );
       this.clearCurrentQuestion();
       this.gameState = "over";
+
+      // Calculate % score, including possibility that potentialScore === 0
+      let percentage = Math.round( 100 * this.score / this.potentialScore );
+      const scorePercentage = isNaN( percentage ) ? "n/a" : `${percentage}%`;
+
+      // Show score summary
       this.view.showSubtitle(
-         `Game over! Score <strong>${ this.score }</strong>
-         / <strong>${ this.potentialScore }</strong>
+         `Game over! Score <strong>${ scorePercentage }</strong>
+         ( ${ this.score } / ${ this.potentialScore } )
          <br />Press SPACE to restart`
       );
       this.resetGame();
@@ -143,7 +151,6 @@ export default class {
       this.questions.push( q );
       this.currentQuestion = q;
       this.gameState = "question";
-      this.view.showSubtitle( `${this.round} / ${this.config.roundsPerGame}` );
       this.view.showQuestion( q );
    }
 
@@ -193,7 +200,10 @@ export default class {
 
       // Set timeout for buffer between questions
       // or end of game
-      if ( this.round < this.config.roundsPerGame ){
+      if(
+         this.config.endOnTargetPotentialScore && this.potentialScore < this.config.targetPotentialScore
+         || !this.config.endOnTargetPotentialScore && this.round < this.config.targetRounds
+      ){
          this.timeoutId = setTimeout(
             () => this.nextQuestion(),
             this.config.questionBuffer
@@ -210,6 +220,13 @@ export default class {
    nextQuestion(){
       ++this.round;
       this.questionCreate();
+
+      // Update view subtitle
+      if( this.config.endOnTargetPotentialScore ){
+         this.view.showSubtitle( `Score: ${this.score} / ${this.potentialScore}` );
+      } else {
+         this.view.showSubtitle( `Round: ${this.round} / ${this.config.targetRounds}` );
+      }
 
       // Set timeout for question duration
       this.timeoutId = setTimeout(
