@@ -48,11 +48,11 @@ export default class {
                values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
             }
          },
-         nBackOffset: -2,
-         questionBuffer: 200, // Milliseconds
-         questionDuration: 1800, // Milliseconds
-         targetRounds: 20,
-         targetPotentialScore: 20,
+         nBackOffset: -2,// How many steps back to compare against
+         questionBuffer: 200,// Milliseconds - gap between questions
+         questionDuration: 1800,// Milliseconds - how long to show question
+         targetRounds: 20,// Game end target if endOnTargetPotentialScore === false
+         targetPotentialScore: 20,// Game end target if endOnTargetPotentialScore === true
          endOnTargetPotentialScore: true // End game on targetPotentialScore | targetRounds
       };
 
@@ -86,7 +86,7 @@ export default class {
       this.timeoutId = null;
       this.questions = [];// Array of questions in current/last round
       this.response = [];// Holds user response while question is active
-      this.gameState = "ready";// "ready", "question", "buffer", "over"
+      this.gameState = "ready";// "ready", "question", "over"
       this.potentialScore = 0;
       this.round = 0;
       this.score = 0;
@@ -196,10 +196,8 @@ export default class {
 
       this.clearCurrentQuestion();// Clear grid
       this.response = [];// Clear user response
-      this.gameState = "buffer";// Set state
 
-      // Set timeout for buffer between questions
-      // or end of game
+      // Set timeout for next question or gameEnd
       if(
          this.config.endOnTargetPotentialScore && this.potentialScore < this.config.targetPotentialScore
          || !this.config.endOnTargetPotentialScore && this.round < this.config.targetRounds

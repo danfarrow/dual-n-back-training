@@ -6,12 +6,13 @@ import DualNBack from "./DualNBack.js";
  * Set everything up when ready
  */
 const userConfig = {
+   // @see DualNBack.js for config option info
    nBackOffset: -2,
    questionBuffer: 100, // Milliseconds
    questionDuration: 1200, // Milliseconds
-   targetRounds: 3,
+   targetRounds: 20,
    targetPotentialScore: 20,
-   endOnTargetPotentialScore: false // End game on targetScore | targetRounds
+   endOnTargetPotentialScore: true
 }
 
 document.addEventListener(
