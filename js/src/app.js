@@ -15,10 +15,10 @@ const userConfig = {
    endOnTargetPotentialScore: true
 }
 
+/**
+ * Instantiate app
+ */
 document.addEventListener(
-   "DOMContentLoaded",
-   () => new DualNBack(
-      document.getElementById( "container"),
-      userConfig
-   )
+   'DOMContentLoaded',
+   () => new DualNBack( document.body, userConfig )
 )

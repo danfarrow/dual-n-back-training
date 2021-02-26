@@ -2,10 +2,11 @@
 
 export default class {
    constructor( gui  ){
-      // Create cell elements
+
+      // Create cell grid
       this.cells = [];
       const cellsDiv = document.createElement( 'div' );
-      cellsDiv.classList.add( 'cells' );
+      cellsDiv.classList.add( 'module', 'cells' );
 
       for( let i = 0; i < 9; i++ ){
          const cell = document.createElement( 'div' );
@@ -14,13 +15,23 @@ export default class {
       }
 
       // Create caption elements
-      this.surtitle = document.createElement( 'h2' );
-      this.subtitle = document.createElement( 'h2' );
+      const header = document.createElement( 'div' );
+      header.classList.add( 'module', 'header' );
+      const title = document.createElement( 'h1' );
+      title.innerText = 'Dual N Back trainer';
+      header.appendChild( title );
+
+      const surtitle = document.createElement( 'h2' );
+      header.appendChild( surtitle );
+      this.surtitle = surtitle;
+
+      const subtitle = document.createElement( 'h2' );
+      header.appendChild( subtitle );
+      this.subtitle = subtitle;
 
       // Append everything
-      gui.appendChild( this.surtitle );
+      gui.appendChild( header );
       gui.appendChild( cellsDiv );
-      gui.appendChild( this.subtitle );
    }
 
    showSubtitle( txt ){
