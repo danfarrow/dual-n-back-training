@@ -10,9 +10,8 @@
   "scripts": {
     "webpack:build": "webpack --progress --mode=production",
     "webpack:watch": "webpack --progress --watch",
-    "webpack;server": "webpack-dev-server --open"
+    "webpack:server": "webpack-dev-server --open"
   },
   "author": "Dan Farrow",
-  "license": "",
-  "dependencies": {}
+  "license": ""
 }
