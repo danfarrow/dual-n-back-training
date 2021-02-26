@@ -1,10 +1,7 @@
 "use strict";
 
-import DualNBack from "./DualNBack.js";
+import DualNBack from './DualNBack.js';
 
-/**
- * Set everything up when ready
- */
 const userConfig = {
    // @see DualNBack.js for config option info
    nBackOffset: -2,

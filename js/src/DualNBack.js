@@ -1,7 +1,7 @@
 "use strict";
 
-import Question from "./Question.js";
-import View from "./View.js";
+import Question from './Question.js';
+import View from './View.js';
 
 /**
  * Dual N-Back training app
@@ -29,7 +29,6 @@ import View from "./View.js";
  * - Show sparkline of progress
  * - Add user config frontend with local storage
  */
-
 export default class {
 
    constructor( elem, userConfig = {} ){
@@ -38,12 +37,12 @@ export default class {
       const defaultConfig = {
          dimensions: {
             colour: {
-               triggerKey: "Q",
+               triggerKey: 'Q',
                triggerKeyCode: 81,
                values: [ '#ed553b', '#20639b', '#f6d55c' ]
             },
             position: {
-               triggerKey: "E",
+               triggerKey: 'E',
                triggerKeyCode: 69,
                values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
             }
@@ -57,25 +56,30 @@ export default class {
       };
 
       // Merge configs
-      this.config = Object.assign( {}, defaultConfig, userConfig );
+      this.config = { ...defaultConfig, ...userConfig };
 
       // Create view & instructions
       this.view = new View( elem );
       const rules = [];
 
+      // Display rules in gui
       for( const d in this.config.dimensions )
-         rules.push( `<strong>${ this.config.dimensions[d].triggerKey }</strong>: ${d}` );
+         rules.push(
+            `<strong>${ this.config.dimensions[d].triggerKey }</strong>: ${d}`
+         );
 
       this.view.showSurtitle(
-         `${ rules.join(", ") },
+         `${ rules.join(', ') },
          N-back: <strong>
-         ${this.config.nBackOffset}
+         ${ this.config.nBackOffset }
          </strong>`
       );
+
       this.view.showSubtitle( 'Press SPACE to start' );
 
       // Listen for keypresses & init
-      document.addEventListener( "keydown", (e) => this.onKeyPress(e) );
+      document.addEventListener( 'keydown', (e) => this.onKeyPress(e) );
+
       this.resetGame();
    }
 
@@ -86,7 +90,7 @@ export default class {
       this.timeoutId = null;
       this.questions = [];// Array of questions in current/last round
       this.response = [];// Holds user response while question is active
-      this.gameState = "ready";// "ready", "question", "over"
+      this.gameState = 'ready';// 'ready', 'question', 'over'
       this.potentialScore = 0;
       this.round = 0;
       this.score = 0;
@@ -98,10 +102,10 @@ export default class {
    onKeyPress( e ){
 
       // Start game if space pressed
-      if( 32 === e.keyCode && "ready" === this.gameState ) this.questionEnd();
+      if( 32 === e.keyCode && 'ready' === this.gameState ) this.questionEnd();
 
       // Abort game if ESC pressed
-      if( 27 === e.keyCode && "ready" !== this.gameState) this.gameEnd();
+      if( 27 === e.keyCode && 'ready' !== this.gameState) this.gameEnd();
 
       // Check if currently accepting user responses
       if( !this.currentQuestion ) return;
@@ -118,11 +122,11 @@ export default class {
    gameEnd(){
       clearInterval( this.timeoutId );
       this.clearCurrentQuestion();
-      this.gameState = "over";
+      this.gameState = 'over';
 
       // Calculate % score, including possibility that potentialScore === 0
       let percentage = Math.round( 100 * this.score / this.potentialScore );
-      const scorePercentage = isNaN( percentage ) ? "n/a" : `${percentage}%`;
+      const scorePercentage = isNaN( percentage ) ? 'n/a' : `${percentage}%`;
 
       // Show score summary
       this.view.showSubtitle(
@@ -144,13 +148,13 @@ export default class {
    }
 
    /**
-    * Create a new question
+    * Instantiate a new Question
     */
    questionCreate(){
       const q = new Question( this.config.dimensions );
       this.questions.push( q );
       this.currentQuestion = q;
-      this.gameState = "question";
+      this.gameState = 'question';
       this.view.showQuestion( q );
    }
 
@@ -158,7 +162,7 @@ export default class {
     * Clear the grid
     */
    clearCurrentQuestion(){
-      this.view.showSubtitle( "" );
+      // this.view.showSubtitle( '' );
       if( !this.currentQuestion ) return;
       this.view.removeQuestion( this.currentQuestion );
       this.currentQuestion = null;
